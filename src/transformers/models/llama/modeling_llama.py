@@ -605,7 +605,7 @@ class LlamaDecoderLayer(nn.Module):
         hidden_states = residual + hidden_states
 
         print(hidden_states.shape)
-        hidden_factor = self.scale_hidden_state(hidden_states)
+        hidden_factor = self.scale_hidden_states(hidden_states)
         print(hidden_factor.shape)
 
         # Fully Connected
