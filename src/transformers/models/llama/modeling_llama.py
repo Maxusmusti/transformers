@@ -543,9 +543,9 @@ class LlamaDecoderLayer(nn.Module):
         self.input_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
-    def scale_hidden_state(self, hidden_state):
+    def scale_hidden_states(self, hidden_states):
         # Originally implemented in https://github.com/ChenyangSi/FreeU
-        hidden_mean = hidden_state.mean(1).unsqueeze(1)
+        hidden_mean = hidden_states.mean(1).unsqueeze(1)
         B = hidden_mean.shape[0]
         hidden_max, _ = torch.max(hidden_mean.view(B, -1), dim=-1, keepdim=True) 
         hidden_min, _ = torch.min(hidden_mean.view(B, -1), dim=-1, keepdim=True)
@@ -605,7 +605,7 @@ class LlamaDecoderLayer(nn.Module):
         hidden_states = residual + hidden_states
 
         print(hidden_states.shape)
-        hidden_factor = self.scale_hidden_state(hidden_state)
+        hidden_factor = self.scale_hidden_state(hidden_states)
         print(hidden_factor.shape)
 
         # Fully Connected
