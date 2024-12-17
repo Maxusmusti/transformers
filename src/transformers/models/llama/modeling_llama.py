@@ -609,7 +609,7 @@ class LlamaDecoderLayer(nn.Module):
         print(hidden_factor.shape)
         print("scale")
         self.b1 = 1.4
-        hidden_states = hidden_states * ((self.b1 - 1 ) * hidden_mean + 1)
+        hidden_states = hidden_states * ((self.b1 - 1 ) * hidden_factor + 1)
         print(hidden_states.shape)
         print("add residual")
         hidden_states = residual + hidden_states
