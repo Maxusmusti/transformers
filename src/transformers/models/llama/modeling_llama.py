@@ -550,7 +550,7 @@ class LlamaDecoderLayer(nn.Module):
         hidden_max, _ = torch.max(hidden_mean.view(B, -1), dim=-1, keepdim=True) 
         hidden_min, _ = torch.min(hidden_mean.view(B, -1), dim=-1, keepdim=True)
         hidden_factor = (hidden_mean - hidden_min.unsqueeze(2).unsqueeze(3)) / (hidden_max - hidden_min).unsqueeze(2).unsqueeze(3)
-        return hidden_factor
+        return hidden_factor.squeeze(0)
 
     def forward(
         self,
