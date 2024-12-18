@@ -605,18 +605,18 @@ class LlamaDecoderLayer(nn.Module):
             position_embeddings=position_embeddings,
             **kwargs,
         )
-        print("first")
-        print(hidden_states.shape)
-        print("factor")
+        #print("first")
+        #print(hidden_states.shape)
+        #print("factor")
         hidden_factor = self.scale_hidden_states(hidden_states)
-        print(hidden_factor.shape)
-        print("scale")
+        #print(hidden_factor.shape)
+        #print("scale")
         self.b1 = 1.4
         hidden_states = hidden_states * ((self.b1 - 1 ) * hidden_factor + 1)
-        print(hidden_states.shape)
-        print("add residual")
+        #print(hidden_states.shape)
+        #print("add residual")
         hidden_states = residual + hidden_states
-        print(hidden_states.shape)
+        #print(hidden_states.shape)
 
         # Fully Connected
         residual = hidden_states
