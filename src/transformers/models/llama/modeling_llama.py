@@ -543,6 +543,9 @@ class LlamaDecoderLayer(nn.Module):
         self.input_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
+        # hack
+        self.config = config
+
     def scale_hidden_states(self, hidden_states, scale_type):
         # Originally implemented in https://github.com/ChenyangSi/FreeU
         if scale_type=="feature_avg":
@@ -610,14 +613,14 @@ class LlamaDecoderLayer(nn.Module):
         #print("first")
         #print(hidden_states.shape)
         #print("factor")
-        if config.scale_type != "naive":
+        if self.config.scale_type != "naive":
             hidden_factor = self.scale_hidden_states(hidden_states, config.scale_type)
         #print(hidden_factor.shape)
         #print("scale")
-            hidden_states = hidden_states * ((config.b_scale - 1 ) * hidden_factor + 1)
+            hidden_states = hidden_states * ((self.config.b_scale - 1 ) * hidden_factor + 1)
         else:
-            hidden_states *= config.b_scale
-            residual *= config.s_scale
+            hidden_states *= self.config.b_scale
+            residual *= self.config.s_scale
         #print(hidden_states.shape)
         #print("add residual")
         hidden_states = residual + hidden_states
