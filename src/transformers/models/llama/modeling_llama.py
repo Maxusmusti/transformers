@@ -610,7 +610,7 @@ class LlamaDecoderLayer(nn.Module):
         #print("first")
         #print(hidden_states.shape)
         #print("factor")
-        if scale_type != "naive":
+        if self.config.scale_type != "naive":
             hidden_factor = self.scale_hidden_states(hidden_states, self.config.scale_type)
         #print(hidden_factor.shape)
         #print("scale")
