@@ -545,7 +545,7 @@ class LlamaDecoderLayer(nn.Module):
 
     def scale_hidden_states(self, hidden_states, scale_type):
         # Originally implemented in https://github.com/ChenyangSi/FreeU
-        if scale_type=="feature_avg"
+        if scale_type=="feature_avg":
             hidden_mean = hidden_states.mean(2).unsqueeze(2)
         elif scale_type=="token_avg":
             hidden_mean = hidden_states.mean(1).unsqueeze(1)
