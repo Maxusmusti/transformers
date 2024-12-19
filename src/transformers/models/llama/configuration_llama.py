@@ -176,6 +176,9 @@ class LlamaConfig(PretrainedConfig):
         attention_dropout=0.0,
         mlp_bias=False,
         head_dim=None,
+        scale_type="naive",
+        b_scale=1,
+        s_scale=1,
         **kwargs,
     ):
         self.vocab_size = vocab_size
@@ -206,6 +209,10 @@ class LlamaConfig(PretrainedConfig):
         if self.rope_scaling is not None and "type" in self.rope_scaling:
             self.rope_scaling["rope_type"] = self.rope_scaling["type"]
         rope_config_validation(self)
+
+        self.scale_type = scale_type
+        self.b_scale = b_scale
+        self.s_scale = s_scale
 
         super().__init__(
             pad_token_id=pad_token_id,

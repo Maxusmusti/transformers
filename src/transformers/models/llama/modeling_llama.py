@@ -543,12 +543,14 @@ class LlamaDecoderLayer(nn.Module):
         self.input_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
-    def scale_hidden_states(self, hidden_states, feature_avg=True):
+    def scale_hidden_states(self, hidden_states, scale_type):
         # Originally implemented in https://github.com/ChenyangSi/FreeU
-        if feature_avg:
+        if scale_type="feature_avg"
             hidden_mean = hidden_states.mean(2).unsqueeze(2)
-        else:
+        elif scale_type="token_avg":
             hidden_mean = hidden_states.mean(1).unsqueeze(1)
+        else:
+            raise(f"Invalid scale_type {scale_type}")
         B = hidden_mean.shape[0]
         hidden_max, _ = torch.max(hidden_mean.view(B, -1), dim=-1, keepdim=True) 
         hidden_min, _ = torch.min(hidden_mean.view(B, -1), dim=-1, keepdim=True)
@@ -608,11 +610,14 @@ class LlamaDecoderLayer(nn.Module):
         #print("first")
         #print(hidden_states.shape)
         #print("factor")
-        hidden_factor = self.scale_hidden_states(hidden_states)
+        if scale_type != "naive":
+            hidden_factor = self.scale_hidden_states(hidden_states, self.config.scale_type)
         #print(hidden_factor.shape)
         #print("scale")
-        self.b1 = 1.4
-        hidden_states = hidden_states * ((self.b1 - 1 ) * hidden_factor + 1)
+            hidden_states = hidden_states * ((self.config.b_scale - 1 ) * hidden_factor + 1)
+        else:
+            hidden_states *= self.config.b_scale
+            residual *= self.config.s_scale
         #print(hidden_states.shape)
         #print("add residual")
         hidden_states = residual + hidden_states
