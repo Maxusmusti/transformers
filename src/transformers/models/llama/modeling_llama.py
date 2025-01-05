@@ -570,6 +570,7 @@ class LlamaDecoderLayer(nn.Module):
         use_cache: Optional[bool] = False,
         cache_position: Optional[torch.LongTensor] = None,
         position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,  # necessary, but kept here for BC
+        layer_id: Optional[int] = None,
         **kwargs,
     ) -> Tuple[torch.FloatTensor, Optional[Tuple[torch.FloatTensor, torch.FloatTensor]]]:
         """
@@ -611,11 +612,18 @@ class LlamaDecoderLayer(nn.Module):
             **kwargs,
         )
 
+        if self.config.per_layer:
+            b_scale_attn = self.config.per_layer_b_scale_attn[0]
+            b_scale_mlp = self.config.per_layer_b_scale_mlp[0]
+        else:
+            b_scale_attn = self.config.b_scale
+            b_scale_mlp = self.config.b_scale
+
         if self.config.scale_type != "naive":
             hidden_factor = self.scale_hidden_states(hidden_states, self.config.scale_type)
-            hidden_states = hidden_states * ((self.config.b_scale - 1 ) * hidden_factor + 1)
+            hidden_states = hidden_states * ((b_scale_attn - 1 ) * hidden_factor + 1)
         else:
-            hidden_states *= self.config.b_scale
+            hidden_states *= b_scale_attn
             residual *= self.config.s_scale
 
         hidden_states = residual + hidden_states
@@ -627,9 +635,9 @@ class LlamaDecoderLayer(nn.Module):
 
         if self.config.scale_type != "naive":
             hidden_factor = self.scale_hidden_states(hidden_states, self.config.scale_type)
-            hidden_states = hidden_states * ((self.config.b_scale - 1 ) * hidden_factor + 1)
+            hidden_states = hidden_states * ((b_scale_mlp - 1 ) * hidden_factor + 1)
         else:
-            hidden_states *= self.config.b_scale
+            hidden_states *= b_scale_mlp
             residual *= self.config.s_scale
 
         hidden_states = residual + hidden_states
@@ -873,7 +881,10 @@ class LlamaModel(LlamaPreTrainedModel):
         all_self_attns = () if output_attentions else None
         next_decoder_cache = None
 
-        for decoder_layer in self.layers[: self.config.num_hidden_layers]:
+        for i in range(self.config.num_hidden_layers):
+            #if i in (14,17,21,25):
+            #    continue
+            decoder_layer = self.layers[i]
             if output_hidden_states:
                 all_hidden_states += (hidden_states,)
 
@@ -899,6 +910,7 @@ class LlamaModel(LlamaPreTrainedModel):
                     use_cache=use_cache,
                     cache_position=cache_position,
                     position_embeddings=position_embeddings,
+                    layer_id=i,
                     **flash_attn_kwargs,
                 )
 
