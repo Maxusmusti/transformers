@@ -613,8 +613,8 @@ class LlamaDecoderLayer(nn.Module):
         )
 
         if self.config.per_layer:
-            b_scale_attn = self.config.per_layer_b_scale_attn[0]
-            b_scale_mlp = self.config.per_layer_b_scale_mlp[0]
+            b_scale_attn = self.config.per_layer_b_scale_attn[layer_id]
+            b_scale_mlp = self.config.per_layer_b_scale_mlp[layer_id]
         else:
             b_scale_attn = self.config.b_scale
             b_scale_mlp = self.config.b_scale
