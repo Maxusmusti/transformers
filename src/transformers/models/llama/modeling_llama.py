@@ -538,8 +538,9 @@ class LlamaDecoderLayer(nn.Module):
         self.hidden_size = config.hidden_size
 
         self.self_attn = LLAMA_ATTENTION_CLASSES[config._attn_implementation](config=config, layer_idx=layer_idx)
-
+        self.b_scale_attn = nn.Parameter(torch.ones(1))
         self.mlp = LlamaMLP(config)
+        self.b_scale_mlp = nn.Parameter(torch.ones(1))
         self.input_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
@@ -611,19 +612,19 @@ class LlamaDecoderLayer(nn.Module):
             position_embeddings=position_embeddings,
             **kwargs,
         )
-
+        """
         if self.config.per_layer:
             b_scale_attn = self.config.per_layer_b_scale_attn[layer_id]
             b_scale_mlp = self.config.per_layer_b_scale_mlp[layer_id]
         else:
             b_scale_attn = self.config.b_scale
             b_scale_mlp = self.config.b_scale
-
+        """
         if self.config.scale_type != "naive":
             hidden_factor = self.scale_hidden_states(hidden_states, self.config.scale_type)
-            hidden_states = hidden_states * ((b_scale_attn - 1 ) * hidden_factor + 1)
+            hidden_states = hidden_states * ((self.b_scale_attn - 1 ) * hidden_factor + 1)
         else:
-            hidden_states *= b_scale_attn
+            hidden_states *= self.b_scale_attn
             residual *= self.config.s_scale
 
         hidden_states = residual + hidden_states
@@ -635,9 +636,9 @@ class LlamaDecoderLayer(nn.Module):
 
         if self.config.scale_type != "naive":
             hidden_factor = self.scale_hidden_states(hidden_states, self.config.scale_type)
-            hidden_states = hidden_states * ((b_scale_mlp - 1 ) * hidden_factor + 1)
+            hidden_states = hidden_states * ((self.b_scale_mlp - 1 ) * hidden_factor + 1)
         else:
-            hidden_states *= b_scale_mlp
+            hidden_states *= self.b_scale_mlp
             residual *= self.config.s_scale
 
         hidden_states = residual + hidden_states
