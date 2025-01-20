@@ -596,38 +596,39 @@ class LlamaDecoderLayer(nn.Module):
                 Arbitrary kwargs to be ignored, used for FSDP and other methods that injects code
                 into the model
         """
-        residual = hidden_states
+        if self.b_scale_attn:
+            residual = hidden_states
 
-        hidden_states = self.input_layernorm(hidden_states)
+            hidden_states = self.input_layernorm(hidden_states)
 
-        # Self Attention
-        hidden_states, self_attn_weights, present_key_value = self.self_attn(
-            hidden_states=hidden_states,
-            attention_mask=attention_mask,
-            position_ids=position_ids,
-            past_key_value=past_key_value,
-            output_attentions=output_attentions,
-            use_cache=use_cache,
-            cache_position=cache_position,
-            position_embeddings=position_embeddings,
-            **kwargs,
-        )
-        """
-        if self.config.per_layer:
-            b_scale_attn = self.config.per_layer_b_scale_attn[layer_id]
-            b_scale_mlp = self.config.per_layer_b_scale_mlp[layer_id]
-        else:
-            b_scale_attn = self.config.b_scale
-            b_scale_mlp = self.config.b_scale
-        """
-        if self.config.scale_type != "naive":
-            hidden_factor = self.scale_hidden_states(hidden_states, self.config.scale_type)
-            hidden_states = hidden_states * ((self.b_scale_attn - 1 ) * hidden_factor + 1)
-        else:
-            hidden_states *= self.b_scale_attn
-            residual *= self.config.s_scale
+            # Self Attention
+            hidden_states, self_attn_weights, present_key_value = self.self_attn(
+                hidden_states=hidden_states,
+                attention_mask=attention_mask,
+                position_ids=position_ids,
+                past_key_value=past_key_value,
+                output_attentions=output_attentions,
+                use_cache=use_cache,
+                cache_position=cache_position,
+                position_embeddings=position_embeddings,
+                **kwargs,
+            )
+            """
+            if self.config.per_layer:
+                b_scale_attn = self.config.per_layer_b_scale_attn[layer_id]
+                b_scale_mlp = self.config.per_layer_b_scale_mlp[layer_id]
+            else:
+                b_scale_attn = self.config.b_scale
+                b_scale_mlp = self.config.b_scale
+            """
+            if self.config.scale_type != "naive":
+                hidden_factor = self.scale_hidden_states(hidden_states, self.config.scale_type)
+                hidden_states = hidden_states * ((self.b_scale_attn - 1 ) * hidden_factor + 1)
+            else:
+                hidden_states *= self.b_scale_attn
+                residual *= self.config.s_scale
 
-        hidden_states = residual + hidden_states
+            hidden_states = residual + hidden_states
 
         # Fully Connected
         residual = hidden_states
