@@ -539,8 +539,10 @@ class LlamaDecoderLayer(nn.Module):
 
         self.self_attn = LLAMA_ATTENTION_CLASSES[config._attn_implementation](config=config, layer_idx=layer_idx)
         self.b_scale_attn = nn.Parameter(torch.ones(1))
+        self.s_scale_attn = nn.Parameter(torch.ones(1))
         self.mlp = LlamaMLP(config)
         self.b_scale_mlp = nn.Parameter(torch.ones(1))
+        self.s_scale_mlp = nn.Parameter(torch.ones(1))
         self.input_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
@@ -628,7 +630,7 @@ class LlamaDecoderLayer(nn.Module):
                 hidden_states *= self.b_scale_attn
                 residual *= self.config.s_scale
 
-            hidden_states = residual + hidden_states
+            hidden_states = residual * self.s_scale_attn + hidden_states
 
         # Fully Connected
         residual = hidden_states
@@ -642,7 +644,7 @@ class LlamaDecoderLayer(nn.Module):
             hidden_states *= self.b_scale_mlp
             residual *= self.config.s_scale
 
-        hidden_states = residual + hidden_states
+        hidden_states = residual * self.s_scale_mlp + hidden_states
 
         #print(hidden_states.shape)
 
