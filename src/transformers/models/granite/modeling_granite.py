@@ -515,6 +515,9 @@ class GraniteDecoderLayer(nn.Module):
 
         self.residual_multiplier = config.residual_multiplier
 
+        # hack
+        self.config = config
+
     def forward(
         self,
         hidden_states: torch.Tensor,
