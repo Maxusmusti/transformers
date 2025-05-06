@@ -139,6 +139,12 @@ class GraniteConfig(PretrainedConfig):
         logits_scaling=1.0,
         residual_multiplier=1.0,
         attention_multiplier=1.0,
+        scale_type="naive",
+        b_scale=1,
+        s_scale=1,
+        per_layer=False,
+        per_layer_b_scale_attn=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        per_layer_b_scale_mlp=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
         **kwargs,
     ):
         self.vocab_size = vocab_size
@@ -167,6 +173,13 @@ class GraniteConfig(PretrainedConfig):
         self.logits_scaling = logits_scaling
         self.residual_multiplier = residual_multiplier
         self.attention_multiplier = attention_multiplier
+
+        self.scale_type = scale_type
+        self.b_scale = b_scale
+        self.s_scale = s_scale
+        self.per_layer = per_layer
+        self.per_layer_b_scale_attn = per_layer_b_scale_attn
+        self.per_layer_b_scale_mlp = per_layer_b_scale_mlp
 
         super().__init__(
             pad_token_id=pad_token_id,
