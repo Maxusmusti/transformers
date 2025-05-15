@@ -551,10 +551,17 @@ class Qwen2DecoderLayer(nn.Module):
                 "unexpected results may be encountered."
             )
         self.self_attn = QWEN2_ATTENTION_CLASSES[config._attn_implementation](config, layer_idx)
-
+        self.b_scale_attn = nn.Parameter(torch.ones(1))
+        self.s_scale_attn = nn.Parameter(torch.ones(1))
         self.mlp = Qwen2MLP(config)
+        self.b_scale_mlp = nn.Parameter(torch.ones(1))
+        self.s_scale_mlp = nn.Parameter(torch.ones(1))
         self.input_layernorm = Qwen2RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = Qwen2RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+
+        # hack
+        self.config = config
+
 
     def forward(
         self,
@@ -590,28 +597,42 @@ class Qwen2DecoderLayer(nn.Module):
                 into the model
         """
 
-        residual = hidden_states
+        if self.b_scale_attn:
+            residual = hidden_states
 
-        hidden_states = self.input_layernorm(hidden_states)
+            hidden_states = self.input_layernorm(hidden_states)
 
-        # Self Attention
-        hidden_states, self_attn_weights, present_key_value = self.self_attn(
-            hidden_states=hidden_states,
-            attention_mask=attention_mask,
-            position_ids=position_ids,
-            past_key_value=past_key_value,
-            output_attentions=output_attentions,
-            use_cache=use_cache,
-            cache_position=cache_position,
-            position_embeddings=position_embeddings,
-        )
-        hidden_states = residual + hidden_states
+            # Self Attention
+            hidden_states, self_attn_weights, present_key_value = self.self_attn(
+                hidden_states=hidden_states,
+                attention_mask=attention_mask,
+                position_ids=position_ids,
+                past_key_value=past_key_value,
+                output_attentions=output_attentions,
+                use_cache=use_cache,
+                cache_position=cache_position,
+                position_embeddings=position_embeddings,
+            )
+            if self.config.scale_type != "naive":
+                hidden_factor = self.scale_hidden_states(hidden_states, self.config.scale_type)
+                hidden_states = hidden_states * ((self.b_scale_attn - 1 ) * hidden_factor + 1)
+            else:
+                hidden_states *= self.b_scale_attn
+                residual *= self.config.s_scale
+
+            hidden_states = residual * self.s_scale_attn + hidden_states
 
         # Fully Connected
         residual = hidden_states
         hidden_states = self.post_attention_layernorm(hidden_states)
         hidden_states = self.mlp(hidden_states)
-        hidden_states = residual + hidden_states
+        if self.config.scale_type != "naive":
+            hidden_factor = self.scale_hidden_states(hidden_states, self.config.scale_type)
+            hidden_states = hidden_states * ((self.b_scale_mlp - 1 ) * hidden_factor + 1)
+        else:
+            hidden_states *= self.b_scale_mlp
+            residual *= self.config.s_scale
+        hidden_states = residual * self.s_scale_mlp + hidden_states
 
         outputs = (hidden_states,)
 
@@ -622,6 +643,8 @@ class Qwen2DecoderLayer(nn.Module):
             outputs += (present_key_value,)
 
         return outputs
+
+
 
 
 QWEN2_START_DOCSTRING = r"""

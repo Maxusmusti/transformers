@@ -577,7 +577,6 @@ class GraniteDecoderLayer(nn.Module):
                 residual *= self.config.s_scale
 
             hidden_states = residual * self.s_scale_attn + hidden_states * self.residual_multiplier
-            hidden_states = residual + hidden_states 
 
         # Fully Connected
         residual = hidden_states

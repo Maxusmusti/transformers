@@ -160,6 +160,12 @@ class Qwen2Config(PretrainedConfig):
         sliding_window=4096,
         max_window_layers=28,
         attention_dropout=0.0,
+        scale_type="naive",
+        b_scale=1,
+        s_scale=1,
+        per_layer=False,
+        per_layer_b_scale_attn=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        per_layer_b_scale_mlp=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
         **kwargs,
     ):
         self.vocab_size = vocab_size
@@ -184,6 +190,14 @@ class Qwen2Config(PretrainedConfig):
         self.rope_theta = rope_theta
         self.rope_scaling = rope_scaling
         self.attention_dropout = attention_dropout
+
+        self.scale_type = scale_type
+        self.b_scale = b_scale
+        self.s_scale = s_scale
+        self.per_layer = per_layer
+        self.per_layer_b_scale_attn = per_layer_b_scale_attn
+        self.per_layer_b_scale_mlp = per_layer_b_scale_mlp
+
         # Validate the correctness of rotary position embeddings parameters
         # BC: if there is a 'type' field, move it to 'rope_type'.
         if self.rope_scaling is not None and "type" in self.rope_scaling:
