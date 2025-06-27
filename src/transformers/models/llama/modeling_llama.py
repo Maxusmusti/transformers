@@ -632,19 +632,19 @@ class LlamaDecoderLayer(nn.Module):
 
             hidden_states = residual * self.s_scale_attn + hidden_states
 
-        # Fully Connected
-        residual = hidden_states
-        hidden_states = self.post_attention_layernorm(hidden_states)
-        hidden_states = self.mlp(hidden_states)
+            # Fully Connected
+            residual = hidden_states
+            hidden_states = self.post_attention_layernorm(hidden_states)
+            hidden_states = self.mlp(hidden_states)
 
-        if self.config.scale_type != "naive":
-            hidden_factor = self.scale_hidden_states(hidden_states, self.config.scale_type)
-            hidden_states = hidden_states * ((self.b_scale_mlp - 1 ) * hidden_factor + 1)
-        else:
-            hidden_states *= self.b_scale_mlp
-            residual *= self.config.s_scale
+            if self.config.scale_type != "naive":
+                hidden_factor = self.scale_hidden_states(hidden_states, self.config.scale_type)
+                hidden_states = hidden_states * ((self.b_scale_mlp - 1 ) * hidden_factor + 1)
+            else:
+                hidden_states *= self.b_scale_mlp
+                residual *= self.config.s_scale
 
-        hidden_states = residual * self.s_scale_mlp + hidden_states
+            hidden_states = residual * self.s_scale_mlp + hidden_states
 
         #print(hidden_states.shape)
 
